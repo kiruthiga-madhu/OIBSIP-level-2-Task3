@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>To‑Do Web App</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#7c5cff; --glass: rgba(255,255,255,0.04);
+      --glass-2: rgba(255,255,255,0.02);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto; background:linear-gradient(180deg,#071029 0%, #071733 60%); color:#e6eef8}
+    .stage{height:100vh;display:flex;align-items:center;justify-content:center;perspective:1400px}
+
+    .panel{
+      width:980px; max-width:94vw; min-height:560px;
+      border-radius:22px; padding:28px; position:relative;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+      box-shadow: 0 40px 60px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+      transform-style:preserve-3d; transform: rotateX(8deg) translateZ(0);
+      overflow:hidden;
+    }
+
+    .panel::before, .panel::after{
+      content:""; position:absolute; left:-10%; right:-10%; height:220px; pointer-events:none; transform:translateZ(-40px) scale(1.05);
+      filter:blur(40px); opacity:.35; mix-blend-mode:screen;
+    }
+    .panel::before{top:-10%; background:linear-gradient(90deg, rgba(124,92,255,0.22), rgba(123,211,255,0.08));}
+    .panel::after{bottom:-18%; background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));}
+
+    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+    .logo{width:72px;height:72px;border-radius:14px;background:linear-gradient(135deg,var(--accent),#4ad0ff);display:flex;align-items:center;justify-content:center;box-shadow: 0 8px 30px rgba(124,92,255,0.18); transform: translateZ(40px);}
+    .logo span{font-weight:700;color:#04102a}
+    h1{margin:0;font-size:20px;letter-spacing:0.4px; transform: translateZ(32px)}
+    p.lead{margin:0;color:rgba(230,238,248,0.7); font-size:13px; transform: translateZ(28px)}
+
+    .workspace{display:grid;grid-template-columns:1fr 320px;gap:18px;margin-top:18px}
+
+    .left{
+      padding:18px;border-radius:14px;background:linear-gradient(180deg,var(--glass),var(--glass-2)); box-shadow: 0 12px 30px rgba(2,6,23,0.5); transform: translateZ(26px);
+    }
+
+    .add-row{display:flex;gap:10px;margin-bottom:12px}
+    .add-row input{flex:1;padding:14px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:inherit;font-size:15px;outline:none}
+    .add-btn{padding:0 18px;border-radius:12px;background:linear-gradient(180deg,var(--accent), #5a3bff);border:none;color:white;font-weight:600;display:inline-flex;align-items:center;gap:10px;cursor:pointer;box-shadow:0 14px 30px rgba(124,92,255,0.18);transform:translateZ(30px)}
+
+    .lists{display:flex;gap:12px}
+    ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:12px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;gap:12px; box-shadow: 0 10px 22px rgba(2,6,23,0.35);
+      transform-style:preserve-3d; transition: transform 220ms cubic-bezier(.2,.9,.2,1), box-shadow 220ms;
+    }
+    .card:hover{transform: translateY(-8px) rotateX(6deg) translateZ(20px); box-shadow: 0 30px 60px rgba(2,6,23,0.6)}
+
+    .content{display:flex;flex-direction:column;gap:4px}
+    .title{font-weight:600}
+    .meta{font-size:12px;color:rgba(230,238,248,0.6)}
+
+    .controls{display:flex;gap:8px;align-items:center}
+    .controls button{background:transparent;border:none;padding:8px;border-radius:8px;cursor:pointer;color:inherit}
+    .controls button:hover{background:rgba(255,255,255,0.02)}
+
+    .complete-dot{width:18px;height:18px;border-radius:6px;border:2px solid rgba(255,255,255,0.06);display:inline-grid;place-items:center}
+    .completed .title{ text-decoration:line-through; color:rgba(230,238,248,0.5)}
+
+    .right{padding:18px;border-radius:14px;background:linear-gradient(180deg,var(--glass),var(--glass-2)); box-shadow: 0 12px 30px rgba(2,6,23,0.45); transform: translateZ(20px)}
+    .stat{font-size:14px;margin-bottom:8px}
+
+    .muted{color:rgba(230,238,248,0.6);font-size:13px}
+
+    @media (max-width:900px){
+      .workspace{grid-template-columns:1fr}
+      .right{order:2}
+      .left{order:1}
+    }
+
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="panel" id="app">
+      <header>
+        <div class="logo"><span>✔</span></div>
+        <div>
+          <h1>To‑Do Web App</h1>
+          <p class="lead">Add tasks, mark complete, edit or delete — with stylish UI and local persistence.</p>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <div class="left">
+          <div class="add-row">
+            <input id="taskText" placeholder="Add a new task..." />
+            <button class="add-btn" id="addBtn">➕ Add</button>
+          </div>
+
+          <h3 class="muted">Pending Tasks</h3>
+          <ul id="pending"></ul>
+
+          <h3 class="muted" style="margin-top:18px">Completed Tasks</h3>
+          <ul id="completed"></ul>
+        </div>
+
+        <aside class="right">
+          <div class="stat">Total tasks: <strong id="totalCount">0</strong></div>
+          <div class="stat">Pending: <strong id="pendingCount">0</strong></div>
+          <div class="stat">Completed: <strong id="completedCount">0</strong></div>
+
+          <hr style="border:none;height:1px;background:rgba(255,255,255,0.03);margin:12px 0;border-radius:4px">
+          <p class="muted">Click a card to toggle a slight tilt. Use the buttons to complete, edit, or delete. Tasks persist in your browser via <code>localStorage</code>.</p>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const pendingEl = document.getElementById('pending');
+    const completedEl = document.getElementById('completed');
+    const addBtn = document.getElementById('addBtn');
+    const input = document.getElementById('taskText');
+
+    let tasks = JSON.parse(localStorage.getItem('tasks3d')||'[]');
+
+    function save(){ localStorage.setItem('tasks3d', JSON.stringify(tasks)); render(); }
+
+    function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+    function addTask(){
+      const text = input.value.trim();
+      if(!text) return input.animate([{opacity:1},{opacity:0.4},{opacity:1}],{duration:300}), input.focus();
+      tasks.unshift({id:uid(), text, created: new Date().toISOString(), done:false, completedAt:null});
+      input.value=''; save();
+    }
+
+    function editTask(id){
+      const t = tasks.find(x=>x.id===id);
+      const nv = prompt('Edit task:', t.text);
+      if(nv!==null && nv.trim()!==''){ t.text = nv.trim(); t.editedAt = new Date().toISOString(); save(); }
+    }
+
+    function deleteTask(id){ if(!confirm('Delete this task?')) return; tasks = tasks.filter(x=>x.id!==id); save(); }
+
+    function toggleDone(id){
+      const t = tasks.find(x=>x.id===id);
+      t.done = !t.done;
+      t.completedAt = t.done ? new Date().toISOString() : null;
+      tasks = tasks.filter(x=>x.id!==id);
+      if(t.done) tasks.push(t); else tasks.unshift(t);
+      save();
+    }
+
+    function formatISO(iso){ const d = new Date(iso); return d.toLocaleString(); }
+
+    function render(){
+      pendingEl.innerHTML=''; completedEl.innerHTML='';
+      const pending = tasks.filter(t=>!t.done);
+      const completed = tasks.filter(t=>t.done);
+
+      document.getElementById('totalCount').textContent = tasks.length;
+      document.getElementById('pendingCount').textContent = pending.length;
+      document.getElementById('completedCount').textContent = completed.length;
+
+      pending.forEach(t=>{
+        const li = createCard(t, false);
+        pendingEl.appendChild(li);
+      });
+      completed.forEach(t=>{
+        const li = createCard(t, true);
+        completedEl.appendChild(li);
+      });
+    }
+
+    function createCard(task, isDone){
+      const li = document.createElement('li'); li.className='card'+(isDone? ' completed':'');
+      const content = document.createElement('div'); content.className='content';
+      const title = document.createElement('div'); title.className='title'; title.textContent = task.text;
+      const meta = document.createElement('div'); meta.className='meta';
+      meta.textContent = 'Added: ' + formatISO(task.created) + (task.editedAt ? ' • Edited: ' + formatISO(task.editedAt) : '') + (task.completedAt ? ' • Completed: ' + formatISO(task.completedAt) : '');
+      content.appendChild(title); content.appendChild(meta);
+
+      const controls = document.createElement('div'); controls.className='controls';
+      const completeBtn = document.createElement('button'); completeBtn.title = isDone? 'Mark as pending':'Mark as complete'; completeBtn.innerHTML = isDone? '↺':'✔';
+      completeBtn.onclick = (e)=>{ e.stopPropagation(); toggleDone(task.id); };
+
+      const editBtn = document.createElement('button'); editBtn.title='Edit'; editBtn.innerHTML='✏'; editBtn.onclick = (e)=>{ e.stopPropagation(); editTask(task.id); };
+      const delBtn = document.createElement('button'); delBtn.title='Delete'; delBtn.innerHTML='🗑'; delBtn.onclick = (e)=>{ e.stopPropagation(); deleteTask(task.id); };
+
+      controls.appendChild(completeBtn); controls.appendChild(editBtn); controls.appendChild(delBtn);
+
+      li.appendChild(content); li.appendChild(controls);
+
+      li.addEventListener('mousemove', (ev)=>{
+        const r = li.getBoundingClientRect();
+        const cx = r.left + r.width/2; const cy = r.top + r.height/2;
+        const dx = ev.clientX - cx; const dy = ev.clientY - cy;
+        const rx = (-dy / r.height) * 8; const ry = (dx / r.width) * 12;
+        li.style.transform = `translateY(-8px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(28px)`;
+      });
+      li.addEventListener('mouseleave', ()=>{ li.style.transform = ''; });
+
+      return li;
+    }
+
+    addBtn.addEventListener('click', addTask);
+    input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') addTask(); });
+
+    render();
+  </script>
+</body>
+</html>
